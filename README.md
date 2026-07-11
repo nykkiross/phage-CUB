@@ -1,2 +1,14 @@
 # phage-CUB
-Calculating and comparing the GC content, effective number of codons (EnC), relative synonymous codon usage (RSCU), and tRNA adaptation index (tAI) for multiple phages infecting multiple hosts
+Calculating and comparing the GC content, effective number of codons (EnC), relative synonymous codon usage (RSCU), and tRNA adaptation index (tAI) for multiple phages infecting multiple hosts. All scripts are accession-based, meaning only the accession number of an organism is needed to run the scripts. Having FASTA/other files locally is not needed.
+
+This repository contains five scripts which take input from the INPHARED database or similarly structured metadata files. The first script, Lifestyle_and_Distributions, assigns a lifestyle (virulent or temperate) to a phage based on a set number of terms. Distributions of virulent and temperate phages are then determined for a given set of phages. The distribution of tRNAs, both numeric and binary (with/without) are also calculated.
+
+GC_deltaGC calculates the total GC, GC1, GC2, and GC3 for all phages and hosts included in the metadata input file. The ∆GC values are also calculated by subtracting host GC from phage GC. The GC content of hosts and phages are compared and plotted, and the ∆GC values are compared between virulent and temperate phages, between phages with and without tRNAs, and across tRNA numbers.
+
+EnC_deltaEnC calculates the EnC for all phages and hosts included in the metadata file. The ∆EnC values are also calculated by subtracting host EnC from phage EnC. The EnC content of hosts and phages are compared and plotted, and the ∆EnC values are compared between virulent and temperate phages, between phages with and without tRNAs, and across tRNA numbers. Nc plots are also included, visualizing the EnC/GC3 correlations for phages compared to their hosts, virulent compared to temperate phages, phages with tRNAs compared to those without, and comparison across tRNA counts.
+
+RSCU_deltaRSCU calculates RSCU for all phages and hosts included in the metadata file. The ∆RSCU values are also calculated by subtracting host RSCU from phage RSCU. The RSCU content of hosts and phages are compared and plotted at a per-codon level, and ∆RSCU values are compared between virulent and temperate phages, between phages with and without tRNAs, and across tRNA numbers. PERMANOVA is also run on ∆RSCU vectors of lifestyle, tRNA number, and host genus.
+
+tAI_deltatAI calculates tAI for all phages and hosts included in the metadata file. It starts by calculating RSCU for all organisms included. Then it runs tRNAscan-SE 2.0 locally to extract the tRNA data for the hosts. These tRNAscan results are used to generate tRNA libraries for each host species. The tAI of hosts and phages are compared and plotted. ∆tAI values are also calculated by subtracting host tAI from phage tAI, and ∆tAI is compared between virulent and temperate phages, between phages with and without tRNAs, and across tRNA numbers.
+
+If you run into any issues or have any questions, please feel free to contact me at nicole.ross@ufl.edu !
