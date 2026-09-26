@@ -293,7 +293,6 @@ compute_sample_Ks <- function(genome, pseudocount = 1.0) {
   first_counts <- seqinr::uco(genome[[1]], index = "eff", frame = 0)
   total_counts <- rep(0, length(first_counts))
   names(total_counts) <- toupper(names(first_counts))
-  
   for (seq in genome) {
     cc <- seqinr::uco(seq, index = "eff", frame = 0)
     cc <- cc[match(names(total_counts), toupper(names(cc)))]
@@ -301,6 +300,7 @@ compute_sample_Ks <- function(genome, pseudocount = 1.0) {
     total_counts <- total_counts + cc
   }
   codon_table <- list(
+    # 2-fold families
     K = c("AAA", "AAG"),
     N = c("AAC", "AAT"),
     Q = c("CAA", "CAG"),
@@ -310,27 +310,25 @@ compute_sample_Ks <- function(genome, pseudocount = 1.0) {
     Y = c("TAC", "TAT"),
     C = c("TGC", "TGT"),
     F = c("TTC", "TTT"),
-    L2 = c("TTA", "TTG"),
-    
+    # 3-fold family
     I = c("ATA", "ATC", "ATT"),
-    
+    # 4-fold families
     T = c("ACA", "ACC", "ACG", "ACT"),
     P = c("CCA", "CCC", "CCG", "CCT"),
     A = c("GCA", "GCC", "GCG", "GCT"),
     G = c("GGA", "GGC", "GGG", "GGT"),
     V = c("GTA", "GTC", "GTG", "GTT"),
-    R = c("CGA", "CGC", "CGG", "CGT"),
-    L4 = c("CTA", "CTC", "CTG", "CTT"),
-    S4 = c("AGC", "AGT", "TCA", "TCC", "TCG", "TCT")
+    # 6-fold families
+    L = c("TTA", "TTG", "CTA", "CTC", "CTG", "CTT"),
+    R = c("AGA", "AGG", "CGA", "CGC", "CGG", "CGT"),
+    S = c("AGC", "AGT", "TCA", "TCC", "TCG", "TCT")
   )
   eps <- 1e-8
-  
   F_values <- sapply(codon_table, function(codons) {
     counts <- total_counts[codons]
     counts[is.na(counts)] <- 0
     counts <- counts + pseudocount
     n <- sum(counts)
-    
     if (n <= 1) {
       return(NA_real_)
     }
@@ -341,17 +339,24 @@ compute_sample_Ks <- function(genome, pseudocount = 1.0) {
     Fcf
   })
   list(
-    K2 = mean(F_values[c("K", "N", "Q", "H", "D", "E", "Y", "C", "F", "L2")], na.rm = TRUE),
-    K3 = mean(F_values[c("I")], na.rm = TRUE),
-    K4 = mean(F_values[c("T", "P", "A", "G", "V", "R", "L4", "S4")], na.rm = TRUE)
+    K2 = mean(F_values[c(
+      "K", "N", "Q", "H", "D", "E", "Y", "C", "F"
+    )], na.rm = TRUE),
+    K3 = mean(F_values["I"], na.rm = TRUE),
+    K4 = mean(F_values[c(
+      "T", "P", "A", "G", "V"
+    )], na.rm = TRUE),
+    K6 = mean(F_values[c(
+      "L", "R", "S"
+    )], na.rm = TRUE)
   )
 }
 
 calculate_enc_with_fallback <- function(seq, sample_Ks, pseudocount = 1.0) {
   codon_counts <- seqinr::uco(seq, index = "eff", frame = 0)
   names(codon_counts) <- toupper(names(codon_counts))
-  
   codon_table <- list(
+    # 2-fold families
     K = c("AAA", "AAG"),
     N = c("AAC", "AAT"),
     Q = c("CAA", "CAG"),
@@ -361,18 +366,18 @@ calculate_enc_with_fallback <- function(seq, sample_Ks, pseudocount = 1.0) {
     Y = c("TAC", "TAT"),
     C = c("TGC", "TGT"),
     F = c("TTC", "TTT"),
-    L2 = c("TTA", "TTG"),
-    
+    # 3-fold family
     I = c("ATA", "ATC", "ATT"),
-    
+    # 4-fold families
     T = c("ACA", "ACC", "ACG", "ACT"),
     P = c("CCA", "CCC", "CCG", "CCT"),
     A = c("GCA", "GCC", "GCG", "GCT"),
     G = c("GGA", "GGC", "GGG", "GGT"),
     V = c("GTA", "GTC", "GTG", "GTT"),
-    R = c("CGA", "CGC", "CGG", "CGT"),
-    L4 = c("CTA", "CTC", "CTG", "CTT"),
-    S4 = c("AGC", "AGT", "TCA", "TCC", "TCG", "TCT")
+    # 6-fold families
+    L = c("TTA", "TTG", "CTA", "CTC", "CTG", "CTT"),
+    R = c("AGA", "AGG", "CGA", "CGC", "CGG", "CGT"),
+    S = c("AGC", "AGT", "TCA", "TCC", "TCG", "TCT")
   )
   eps <- 1e-8
   F_values <- sapply(codon_table, function(codons) {
@@ -392,23 +397,34 @@ calculate_enc_with_fallback <- function(seq, sample_Ks, pseudocount = 1.0) {
     Fcf <- (n * sum_f2 - 1) / (n - 1)
     max(min(Fcf, 1 - eps), eps)
   })
-  
-  K2 <- mean(F_values[c("K", "N", "Q", "H", "D", "E", "Y", "C", "F", "L2")], na.rm = TRUE)
-  K3 <- mean(F_values[c("I")], na.rm = TRUE)
-  K4 <- mean(F_values[c("T", "P", "A", "G", "V", "R", "L4", "S4")], na.rm = TRUE)
-  
+  K2 <- mean(F_values[c(
+    "K", "N", "Q", "H", "D", "E", "Y", "C", "F"
+  )], na.rm = TRUE)
+  K3 <- mean(F_values["I"], na.rm = TRUE)
+  K4 <- mean(F_values[c(
+    "T", "P", "A", "G", "V"
+  )], na.rm = TRUE)
+  K6 <- mean(F_values[c(
+    "L", "R", "S"
+  )], na.rm = TRUE)
+
   if (is.na(K2)) K2 <- sample_Ks$K2
   if (is.na(K3)) K3 <- sample_Ks$K3
   if (is.na(K4)) K4 <- sample_Ks$K4
+  if (is.na(K6)) K6 <- sample_Ks$K6
   
   K2 <- ifelse(is.na(K2), NA_real_, pmax(K2, eps))
   K3 <- ifelse(is.na(K3), NA_real_, pmax(K3, eps))
   K4 <- ifelse(is.na(K4), NA_real_, pmax(K4, eps))
-  
-  if (any(is.na(c(K2, K3, K4)))) {
+  K6 <- ifelse(is.na(K6), NA_real_, pmax(K6, eps))
+  if (any(is.na(c(K2, K3, K4, K6)))) {
     return(NA_real_)
   }
-  enc <- 2 + 9 / K2 + 1 / K3 + 5 / K4
+  enc <- 2 +
+    9 / K2 +
+    1 / K3 +
+    5 / K4 +
+    3 / K6
   enc <- min(max(enc, 20), 61)
   enc
 }
