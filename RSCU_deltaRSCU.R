@@ -758,8 +758,8 @@ phage_delta_scores <- phage_delta_filt %>%
     has_tRNAs
   ) %>%
   dplyr::summarise(
-    delta_MAE = mean(abs(Delta_RSCU), na.rm = TRUE),
-    delta_EUC = sqrt(sum((Delta_RSCU)^2, na.rm = TRUE)),
+    MAE = mean(abs(Delta_RSCU), na.rm = TRUE),
+    EUC = sqrt(sum((Delta_RSCU)^2, na.rm = TRUE)),
     mean_delta_RSCU = mean(Delta_RSCU, na.rm = TRUE),
     median_delta_RSCU = median(Delta_RSCU, na.rm = TRUE),
     n_codons = sum(is.finite(Delta_RSCU)),
@@ -784,15 +784,15 @@ readr::write_csv(
 # Genus-level per-codon summaries
 # --------------------------------
 delta_rscu_genus_summary <- phage_delta_scores %>%
-  dplyr::filter(!is.na(delta_MAE), !is.na(host_genus)) %>%
+  dplyr::filter(!is.na(MAE), !is.na(host_genus)) %>%
   dplyr::group_by(host_genus) %>%
   dplyr::summarise(
     n_phages = dplyr::n_distinct(phage_id),
-    mean_delta_MAE = mean(delta_MAE, na.rm = TRUE),
-    median_delta_MAE = median(delta_MAE, na.rm = TRUE),
-    sd_delta_MAE = sd(delta_MAE, na.rm = TRUE),
-    mean_delta_EUC = mean(delta_EUC, na.rm = TRUE),
-    median_delta_EUC = median(delta_EUC, na.rm = TRUE),
+    mean_MAE = mean(MAE, na.rm = TRUE),
+    median_MAE = median(MAE, na.rm = TRUE),
+    sd_MAE = sd(MAE, na.rm = TRUE),
+    mean_EUC = mean(EUC, na.rm = TRUE),
+    median_EUC = median(EUC, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -838,9 +838,9 @@ per_phage_rscu_similarity <- phage_delta_filt %>%
           n_codons = n_codons,
           spearman_rho = NA_real_,
           p_value = NA_real_,
-          delta_MAE = mean(abs(df$Delta_RSCU), na.rm = TRUE),
-          delta_RMSE = sqrt(mean(df$Delta_RSCU^2, na.rm = TRUE)),
-          delta_EUC = sqrt(sum(df$Delta_RSCU^2, na.rm = TRUE))
+          MAE = mean(abs(df$Delta_RSCU), na.rm = TRUE),
+          RMSE = sqrt(mean(df$Delta_RSCU^2, na.rm = TRUE)),
+          EUC = sqrt(sum(df$Delta_RSCU^2, na.rm = TRUE))
         )
       )
     }
@@ -856,9 +856,9 @@ per_phage_rscu_similarity <- phage_delta_filt %>%
       n_codons = n_codons,
       spearman_rho = unname(ct$estimate),
       p_value = ct$p.value,
-      delta_MAE = mean(abs(df$Delta_RSCU), na.rm = TRUE),
-      delta_RMSE = sqrt(mean(df$Delta_RSCU^2, na.rm = TRUE)),
-      delta_EUC = sqrt(sum(df$Delta_RSCU^2, na.rm = TRUE))
+      MAE = mean(abs(df$Delta_RSCU), na.rm = TRUE),
+      RMSE = sqrt(mean(df$Delta_RSCU^2, na.rm = TRUE)),
+      EUC = sqrt(sum(df$Delta_RSCU^2, na.rm = TRUE))
     )
   }) %>%
   dplyr::ungroup() %>%
@@ -883,13 +883,13 @@ readr::write_csv(
 # lifestyle comparison
 # ---------------------
 lifestyle <- phage_delta_scores %>%
-  dplyr::filter(!is.na(delta_MAE), !is.na(lifestyle)) %>%
+  dplyr::filter(!is.na(MAE), !is.na(lifestyle)) %>%
   dplyr::group_by(host_genus) %>%
   dplyr::group_modify(~{
     df <- .x
     wt <- safe_wilcox_tbl(
-      df$delta_MAE[df$lifestyle == "virulent"],
-      df$delta_MAE[df$lifestyle == "temperate"]
+      df$MAE[df$lifestyle == "virulent"],
+      df$MAE[df$lifestyle == "temperate"]
     )
     tibble::tibble(
       test = "Wilcoxon",
@@ -897,9 +897,9 @@ lifestyle <- phage_delta_scores %>%
       p_value = wt$p_value,
       n_virulent = sum(df$lifestyle == "virulent", na.rm = TRUE),
       n_temperate = sum(df$lifestyle == "temperate", na.rm = TRUE),
-      median_virulent = median(df$delta_MAE[df$lifestyle == "virulent"], na.rm = TRUE),
-      median_temperate = median(df$delta_MAE[df$lifestyle == "temperate"], na.rm = TRUE),
-      cliffs_delta = cliffs_delta(df$delta_MAE, df$lifestyle)
+      median_virulent = median(df$MAE[df$lifestyle == "virulent"], na.rm = TRUE),
+      median_temperate = median(df$MAE[df$lifestyle == "temperate"], na.rm = TRUE),
+      cliffs_delta = cliffs_delta(df$MAE, df$lifestyle)
     )
   }) %>%
   dplyr::ungroup() %>%
@@ -907,20 +907,20 @@ lifestyle <- phage_delta_scores %>%
 
 readr::write_csv(
   lifestyle,
-  file.path(summary_dir, "stats_lifestyle_deltaMAE.csv")
+  file.path(summary_dir, "stats_lifestyle_MAE.csv")
 )
 
 # -------------------------
 # tRNA presence comparison
 # -------------------------
 trna_presence <- phage_delta_scores %>%
-  dplyr::filter(!is.na(delta_MAE), !is.na(has_tRNAs)) %>%
+  dplyr::filter(!is.na(MAE), !is.na(has_tRNAs)) %>%
   dplyr::group_by(host_genus) %>%
   dplyr::group_modify(~{
     df <- .x
     wt <- safe_wilcox_tbl(
-      df$delta_MAE[df$has_tRNAs == "Without tRNAs"],
-      df$delta_MAE[df$has_tRNAs == "With tRNAs"]
+      df$MAE[df$has_tRNAs == "Without tRNAs"],
+      df$MAE[df$has_tRNAs == "With tRNAs"]
     )
     tibble::tibble(
       test = "Wilcoxon",
@@ -928,9 +928,9 @@ trna_presence <- phage_delta_scores %>%
       p_value = wt$p_value,
       n_without_tRNAs = sum(df$has_tRNAs == "Without tRNAs", na.rm = TRUE),
       n_with_tRNAs = sum(df$has_tRNAs == "With tRNAs", na.rm = TRUE),
-      median_without_tRNAs = median(df$delta_MAE[df$has_tRNAs == "Without tRNAs"], na.rm = TRUE),
-      median_with_tRNAs = median(df$delta_MAE[df$has_tRNAs == "With tRNAs"], na.rm = TRUE),
-      cliffs_delta = cliffs_delta(df$delta_MAE, df$has_tRNAs)
+      median_without_tRNAs = median(df$MAE[df$has_tRNAs == "Without tRNAs"], na.rm = TRUE),
+      median_with_tRNAs = median(df$MAE[df$has_tRNAs == "With tRNAs"], na.rm = TRUE),
+      cliffs_delta = cliffs_delta(df$MAE, df$has_tRNAs)
     )
   }) %>%
   dplyr::ungroup() %>%
@@ -938,24 +938,24 @@ trna_presence <- phage_delta_scores %>%
 
 readr::write_csv(
   trna_presence,
-  file.path(summary_dir, "stats_tRNA_presence_deltaMAE.csv")
+  file.path(summary_dir, "stats_tRNA_presence_MAE.csv")
 )
 
 # ------------------------
 # tRNA count correlations
 # ------------------------
 trna_numeric <- phage_delta_scores %>%
-  dplyr::filter(!is.na(delta_MAE), !is.na(tRNAs)) %>%
+  dplyr::filter(!is.na(MAE), !is.na(tRNAs)) %>%
   dplyr::group_by(host_genus) %>%
   dplyr::group_modify(~{
-    safe_spearman(.x$tRNAs, .x$delta_MAE)
+    safe_spearman(.x$tRNAs, .x$MAE)
   }) %>%
   dplyr::ungroup() %>%
   dplyr::mutate(p_adj_BH = p.adjust(p_value, method = "BH"))
 
 readr::write_csv(
   trna_numeric,
-  file.path(summary_dir, "stats_numeric_tRNA_deltaMAE_spearman.csv")
+  file.path(summary_dir, "stats_numeric_tRNA_MAE_spearman.csv")
 )
 
 # ======================
@@ -1325,7 +1325,7 @@ sink()
 # -----------------------------
 p_lifestyle <- phage_delta_scores %>%
   dplyr::filter(!is.na(lifestyle)) %>%
-  ggplot(aes(x = lifestyle, y = delta_MAE, fill = lifestyle)) +
+  ggplot(aes(x = lifestyle, y = MAE, fill = lifestyle)) +
   geom_violin(trim = TRUE, alpha = 0.8) +
   geom_boxplot(width = 0.15, outlier.shape = NA) +
   facet_wrap(~ host_genus, scales = "free_y", drop = TRUE) +
@@ -1346,7 +1346,7 @@ p_lifestyle <- phage_delta_scores %>%
   )
 
 ggsave(
-  file.path(plot_dir, "plot_deltaMAE_by_lifestyle.png"),
+  file.path(plot_dir, "plot_MAE_by_lifestyle.png"),
   p_lifestyle,
   width = 12,
   height = 8,
@@ -1358,7 +1358,7 @@ ggsave(
 # -----------------------------
 p_trna_presence <- phage_delta_scores %>%
   dplyr::filter(!is.na(has_tRNAs)) %>%
-  ggplot(aes(x = has_tRNAs, y = delta_MAE, fill = has_tRNAs)) +
+  ggplot(aes(x = has_tRNAs, y = MAE, fill = has_tRNAs)) +
   geom_violin(trim = TRUE, alpha = 0.85) +
   geom_boxplot(width = 0.15, outlier.shape = NA) +
   facet_wrap(~ host_genus, scales = "free_y", drop = TRUE) +
@@ -1380,7 +1380,7 @@ p_trna_presence <- phage_delta_scores %>%
 
 
 ggsave(
-  file.path(plot_dir, "plot_deltaMAE_by_tRNA_presence.png"),
+  file.path(plot_dir, "plot_MAE_by_tRNA_presence.png"),
   p_trna_presence,
   width = 12,
   height = 8,
@@ -1392,7 +1392,7 @@ ggsave(
 # -----------------------------
 p_trna_numeric <- phage_delta_scores %>%
   dplyr::filter(!is.na(tRNAs)) %>%
-  ggplot(aes(x = tRNAs, y = delta_MAE)) +
+  ggplot(aes(x = tRNAs, y = MAE)) +
   geom_point(alpha = 0.75, size = 2) +
   geom_smooth(method = "lm", se = TRUE, linewidth = 0.7) +
   facet_wrap(~ host_genus, scales = "free", drop = TRUE) +
